@@ -1,10 +1,66 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Header from "./Header";
+import { checkValidation } from "../Utils/Validate";
+import { auth } from "../Utils/Firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 const Login = () => {
   const [isSignInForm, setIsSignInForm] = useState(true);
+  const [errormessage, serErrormessage] = useState(null);
+  const name = useRef(null);
+  const email = useRef(null);
+  const password = useRef(null);
   const toggleSigninForm = () => {
     setIsSignInForm(!isSignInForm);
+  };
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+    //validate form data
+    const message = checkValidation(
+      email.current.value,
+      password.current.value
+    );
+    serErrormessage(message);
+    if (message) return;
+    //signIn/SignUp
+    if (!isSignInForm) {
+      //SignUp login
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log(user);
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          serErrormessage(errorCode + "-" + errorMessage);
+        });
+    } else {
+      //SignIn Logic
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          console.log(user);
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          serErrormessage(errorCode + "-" + errorMessage);
+        });
+    }
   };
   return (
     <div>
@@ -21,22 +77,29 @@ const Login = () => {
         </div>
         {!isSignInForm && (
           <input
+            ref={name}
             type="text"
             placeholder="Full Name"
             className="p-2 my-4 w-full bg-gray-700"
           />
         )}
         <input
+          ref={email}
           type="text"
           placeholder="Email Address"
           className="p-2 my-4 w-full bg-gray-700"
         />
         <input
+          ref={password}
           type="password"
           placeholder="Password"
           className="p-2 my-4 w-full bg-gray-700"
         />
-        <button className="p-4 my-4 bg-red-700 w-full">
+        <p className="text-red-500 font-bold text-lg py-2">{errormessage}</p>
+        <button
+          className="p-4 my-4 bg-red-700 w-full"
+          onClick={handleButtonClick}
+        >
           {isSignInForm ? "Sign In" : "Sign Up"}
         </button>
         <p className="p-4 my-4 cursor-pointer" onClick={toggleSigninForm}>
